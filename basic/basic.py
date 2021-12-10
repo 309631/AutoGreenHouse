@@ -1,44 +1,46 @@
 import serial
 import time
+import csv
 import os
 
-def cls(): os.system('cls' if os.name=='nt' else 'clear') 
 
-def Menu():
-    cls()
-    print(
-        f"TIME  {TIME}\n"
-        f"TEMPERATURE = {TEMPERATURE} st C\n"
-        f"HUMIDITY = {HUMIDITY}%\n"
-        f"LIGHT = {LIGHT}\n"
-    )
-    time.sleep(5)
-    
+# LICENSED GPL
 
 
-start_time = time.time()
+def array_from_device(device) -> list: #odczyt danych i sprawdzenie dlugosci tabel
+    while True:
+        data = device.readline()
+        array = data.decode().split(",")
+        if len(array) != 3:
+            continue
+        return array
 
-device = '/dev/ttyACM3' #this will have to be changed to the serial port you are using
-try:
-    print(f"Trying... {device}")
-    arduino = serial.Serial(device, 9600) 
-    DATA = arduino.readline()  #read the data from the arduino
-    DATA_ARRAY = DATA.decode().split(",")  #split the data by the tab
-    if len(DATA_ARRAY)==3: 
-        print("Connection clear!")
-except: 
-    print("Failed to connect on",device)    
+def device_from_file(device_file): #ustanowienie polaczenia z urzadzeniem
+    try:
+        print(f"Trying... {device_file}")
+        return serial.Serial(device_file, 9600) 
+    except: 
+        print("Failed to connect on",device_file)
+
+def write_to_csv(file_path,header,data):
+    #check if the file exist, if not, create file and add header // sprawdza czy plik istnieje, jezeli nie,
+    if os.path.isfile(file_path)!=True:
+        with open(file_path, 'w', encoding='UTF8', newline='') as f:    
+            writer = csv.writer(f)
+            writer.writerow(header)
+    #if file exist append new line below
+    with open(file_path, 'a', encoding='UTF8', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(data)
 
 
-while True:
-        time.sleep(5)
-        t = time.localtime()
-        TIME = time.strftime("%H:%M:%S", t)
+def main():
+    arduino = device_from_file("/dev/ttyACM4")
+    while True:
+        [temperature, humidity, light] = array_from_device(arduino)
+        time_string = time.strftime("%H:%M:%S", time.localtime())
+        write_to_csv(file_path="data.csv", header = ['temperature', 'humidity', 'light'], data = [temperature, humidity, light])
+        print(f"{time_string},{temperature},{humidity},{light}")      
 
-        TEMPERATURE = DATA_ARRAY[0]
-        HUMIDITY = DATA_ARRAY[1]
-        LIGHT = DATA_ARRAY[2]
-        # print(TIME,TEMPERATURE,HUMIDITY,LIGHT)
-        Menu()
-      
-
+if __name__ == "__main__":
+    main()
