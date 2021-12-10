@@ -11,7 +11,7 @@
 #define MAX_HUMIDITY 50
 #define MAX_TEMP 24
 
-#define MEASURE_DELAY_MINUTES .1
+#define MEASURE_DELAY_MINUTES 30
 
 
 
@@ -20,13 +20,13 @@ LiquidCrystal_I2C lcd(0x27, 16, 2); // I2C address 0x27, 16 column and 2 rows
 DHT dht = DHT(TEMP_SENSOR_PIN, DHTTYPE);      // Creates a DHT object
 
 void communication();
+void const_communication();
 
 void setup() {
   Serial.begin(9600);
   lcd.init(); // initialize the lcd
   lcd.backlight();
   pinMode(PHOTORESISTOR_PORT, INPUT);
-  Serial.println("time,temperature,humidity,light");
   dht.begin();
 }
 
@@ -43,13 +43,12 @@ if(h>MAX_HUMIDITY || t>MAX_TEMP)
   {digitalWrite(LED_TEMP_PORT,LOW);}
 
 //  function for receiving data through Serial Port/UART
-  communication();
-//
-      Serial.print(dht.readTemperature());
-      Serial.print(",");
-      Serial.print(dht.readHumidity());
-      Serial.print(",");
-      Serial.println(analogRead(A0));
+
+  const_communication();
+  
+//  communication();
+
+
 
 
   
@@ -69,8 +68,16 @@ if(h>MAX_HUMIDITY || t>MAX_TEMP)
 }
 
 
+void const_communication(){
+    Serial.flush();
+    Serial.print(dht.readTemperature());
+    Serial.print(",");
+    Serial.print(dht.readHumidity());
+    Serial.print(",");
+    Serial.println(analogRead(A0));
+}
 
-void communication(){ 
+void communication_by_code(){ 
   
   if(Serial.available() != 0)
   {
